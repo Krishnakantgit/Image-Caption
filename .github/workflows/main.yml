@@ -1,20 +1,41 @@
-name: Sync to Hugging Face hub
+name: Deploy to Hugging Face Spaces
+
 on:
   push:
-    branches: [main]
-
-  # to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    branches:
+      - main  # Change this if your branch is different
 
 jobs:
-  sync-to-hub:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          lfs: true
-      - name: Push to hub
+          lfs: true  # Enables Git LFS support
+
+      - name: Install Git LFS
+        run: |
+          sudo apt update
+          sudo apt install git-lfs
+          git lfs install
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "your-email@example.com"
+          git config --global user.name "your-github-username"
+
+      - name: Track Large Files with Git LFS
+        run: |
+          git lfs track "*.keras"  # Add more file types if needed
+          git add .gitattributes
+          git commit -m "Track large model files with LFS" || echo "No changes to commit"
+
+      - name: Push to Hugging Face Spaces
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push --force https://gamerclub:$HF_TOKEN@huggingface.co/spaces/gamerclub/Image-Caption main
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # Store your Hugging Face token as a GitHub secret
+        run: |
+          git remote add hf https://user:${HF_TOKEN}@huggingface.co/spaces/gamerclub/Image-Caption
+          git pull hf main --rebase  # Avoid conflicts
+          git push hf main --force  # Force push to overwrite if necessary
