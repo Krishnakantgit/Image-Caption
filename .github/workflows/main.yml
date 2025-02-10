@@ -3,7 +3,7 @@ name: Deploy to Hugging Face Spaces
 on:
   push:
     branches:
-      - main  # Change this if your branch is different
+      - main
 
 jobs:
   deploy:
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          lfs: true  # Enables Git LFS support
+          lfs: true  # Enables Git LFS
 
       - name: Install Git LFS
         run: |
@@ -28,14 +28,24 @@ jobs:
 
       - name: Track Large Files with Git LFS
         run: |
-          git lfs track "*.keras"  # Add more file types if needed
+          git lfs track "*.pkl" "*.keras"
           git add .gitattributes
-          git commit -m "Track large model files with LFS" || echo "No changes to commit"
+          git commit -m "Track large files with Git LFS" || echo "No changes to commit"
+
+      - name: Add Hugging Face Remote
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git remote add hf https://user:${HF_TOKEN}@huggingface.co/spaces/gamerclub/Image-Caption || echo "Remote already exists"
+
+      - name: Pull from Hugging Face to Resolve Conflicts
+        run: |
+          git fetch hf
+          git checkout main
+          git reset --soft hf/main  # Use Hugging Face's latest version
+          git add .
+          git commit -m "Resolve conflicts with Hugging Face main branch" || echo "No conflicts to resolve"
 
       - name: Push to Hugging Face Spaces
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # Store your Hugging Face token as a GitHub secret
         run: |
-          git remote add hf https://user:${HF_TOKEN}@huggingface.co/spaces/gamerclub/Image-Caption
-          git pull hf main --rebase  # Avoid conflicts
-          git push hf main --force  # Force push to overwrite if necessary
+          git push hf main --force
