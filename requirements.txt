@@ -1,0 +1,15 @@
+streamlit
+tensorflow
+transformers
+torch
+numpy
+pandas
+Pillow
+opencv-python
+scikit-learn
+scipy
+matplotlib
+seaborn
+cloudflared
+huggingface_hub
+sentencepiece
